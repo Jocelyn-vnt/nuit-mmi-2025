@@ -4,6 +4,7 @@
 const TILE_WIDTH = 32;
 const ROWS = 40;
 const COLS = 20;
+const TOTALTIME = 90;
 
 /**
  * 5 salles de jeu (maps), chacune a :
@@ -198,8 +199,9 @@ let nextSpawnX = -1;
 let nextSpawnY = -1;
 
 // AJOUT CHRONO : variables du chronomètre
-let timer = 60;            // temps restant en secondes
+let timer = TOTALTIME;            // temps restant en secondes
 let timerIsRunning = false; // indique si le chrono est en cours
+
 
 /****************************************************
  * PRELOAD
@@ -228,21 +230,23 @@ function preload() {
  * SETUP
  ****************************************************/
 function setup() {
-  createCanvas(ROWS * TILE_WIDTH, COLS * TILE_WIDTH);
-  rectMode(CENTER);
-  textAlign(CENTER);
-  imageMode(CENTER);
+    createCanvas(ROWS * TILE_WIDTH, COLS * TILE_WIDTH);
+    rectMode(CENTER);
+    textAlign(CENTER);
+    imageMode(CENTER);
 
-  // Musique
-  mySound.loop();
+    document.body.style.backgroundColor = "black";
 
-  volumeSlider = createSlider(0, 1, 0.5, 0.01);
-  volumeSlider.position(width / 2 - 25, height / 2);
-  volumeSlider.style('width', '300px');
-  volumeSlider.input(() => {
-    mySound.setVolume(volumeSlider.value());
-  });
-  volumeSlider.hide();
+    // Musique
+    mySound.loop();
+
+    volumeSlider = createSlider(0, 1, 0.5, 0.01);
+    volumeSlider.position(width / 2 - 25, height / 2);
+    volumeSlider.style('width', '300px');
+    volumeSlider.input(() => {
+        mySound.setVolume(volumeSlider.value());
+    });
+    volumeSlider.hide();
 }
 
 
@@ -362,7 +366,8 @@ function loadLevel(levelIndex) {
         let doorSprite = new Sprite(x, y, 1, 1);
         doorSprite.collider = "static";
         doorSprite.label = cell;  // ex. '2'
-        doorSprite.alpha = 0;     // invisible
+        doorSprite.color = color(0, 0, 0, 0); // fully transparent
+        doorSprite.strokeWeight = 0; // à commenter pour voir les blocks de porte
       }
     }
   }
@@ -446,7 +451,7 @@ function splash() {
     mouseIsPressed
   ) {
     // AJOUT CHRONO : on lance le chronomètre
-    timer = 60;           // réinitialise à 60s
+    timer = TOTALTIME;           // réinitialise à 60s
     timerIsRunning = true; 
     gameState = "level1";
   }
@@ -559,35 +564,36 @@ function winScreen() {
 
 // AJOUT CHRONO : Écran "Game Over"
 function gameOver() {
-  resizeCanvas(ROWS * TILE_WIDTH, COLS * TILE_WIDTH);
-  clear();
+    resizeCanvas(ROWS * TILE_WIDTH, COLS * TILE_WIDTH);
+    clear();
+    clearSprites();
 
-  background(38, 38, 38);
-  fill(255);
-  textFont(LODGER);
-  textSize(80);
-  text("Game Over", width / 2, 120);
+    background(38, 38, 38);
+    fill(255);
+    textFont(LODGER);
+    textSize(80);
+    text("Game Over", width / 2, 120);
 
-  fill(255);
-  textFont(JMH);
-  textSize(20);
-  text("Le temps est écoulé !", width / 2, 160);
+    fill(255);
+    textFont(JMH);
+    textSize(20);
+    text("Le temps est écoulé !", width / 2, 160);
 
-  // Bouton "Menu"
-  fill(89, 135, 126);
-  rect(width / 2, height / 2 + 40, 300, 55, 5);
-  fill(255);
-  textFont(JMH);
-  textSize(30);
-  text("Menu", width / 2, height / 2 + 50);
+    // Bouton "Menu"
+    fill(89, 135, 126);
+    rect(width / 2, height / 2 + 40, 300, 55, 5);
+    fill(255);
+    textFont(JMH);
+    textSize(30);
+    text("Menu", width / 2, height / 2 + 50);
 
-  if (
-    mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 &&
-    mouseY >= height / 2 + 10 && mouseY <= height / 2 + 65 &&
-    mouseIsPressed
-  ) {
-    gameState = "splash";
-  }
+    if (
+        mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 &&
+        mouseY >= height / 2 + 10 && mouseY <= height / 2 + 65 &&
+        mouseIsPressed
+    ) {
+        gameState = "splash";
+    }
 }
 
 

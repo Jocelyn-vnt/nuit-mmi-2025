@@ -1,1021 +1,599 @@
-    let spriteImage, tileImg;
-    let showMessage1 = false;
-    let showMessage2 = false;
-    let showMessage3 = false;
-    let showMessage4 = false;
-    let obj1, obj2, obj3, obj4;
-    let spriteDetective;
-    let level1Called = false;
-    let level2Called = false;
-    let level3Called = false;
-    let level4Called = false;
-    let level5Called = false;
-    let player, bricks;
-    let room, room2, room3, room4;
-    let LODGER;
-    let JMH;
-    let test;
-    let pendu;
-    let tileWidth = 32;
+/**********************
+ * VARIABLES GLOBALES *
+ **********************/
 
-    let ROWS = 40;
-    let COLS = 20;
+// Variables existantes de sketch.js
+let spriteImage, tileImg;
+let showMessage1 = false;
+let obj1;
+let spriteDetective;
+let level1Called = false;
+let player, bricks;
+let room;
+let LODGER;
+let JMH;
+let tileWidth = 32;
 
-    let ROWS1 = 27;
-    let COLS1 = 12;
+// Pour l'écran de splash
+let ROWS = 40;   
+let COLS = 20;   
 
-    let ROWS2 = 28;
-    let COLS2 = 20;
+// Dimensions du niveau 1
+let ROWS1 = 24; 
+let COLS1 = 16;
 
-    let ROWS3 = 29;
-    let COLS3 = 20;
+// Canvas (p5.js)
+let canvasWidth = 480;    
+let canvasHeight = 320;   
+let cnv;
 
-    let ROWS4 = 40;
-    let COLS4 = 20;
+// États du jeu
+let gameState = "splash";
+let mySound;
+let volumeSlider;
 
+// La map du niveau 1
+let map = [
+  "#######################",
+  "#                     #",
+  "#                     #",
+  "#                     #",
+  "#                     #",
+  "#                     #",
+  "#            p        #",
+  "#                     #",
+  "#                     #",
+  "#                     #",
+  "#                     #",
+  "#                     #",
+  "#                     #",
+  "#                     #",
+  "#######################",
+];
 
-    let gameState = "splash"
-    let overlayDisplayed = false;
-    let mySound;
-    let volumeSlider;
-    let win;
-    let map = [
-        "################   ########",
-        "#    # ##              ####",
-        "#                      ####",
-        "#                      ####",
-        "#                         #",
-        "                           ",
-        "p                         w",
-        "                           ",
-        "#                         #",
-        "#   ######1###         ## #",
-        "#   ##########         ## #",
-        "##################    #####"
-    ];
+let indice1;
+let imgIndice1;
+let win;
 
-    let map2 = [
-        "############################",
-        "#                           ",
-        "# ####################      ",
-        "# #                  #      ",
-        "# #     ######       #      ",
-        "# #     ######       #      ",
-        "# #     ######       #####  ",
-        "# #                      #  ",
-        "# #             ###      #  ",
-        "###     ######  ###      #  ",
-        "###     ######  2##       #  ",
-        "#       ######           #  ",
-        "#       ######       #####  ",
-        "                     #      ",
-        "p    ###       ###   #      ",
-        "     ###       ###   #      ",
-        "#    ###       ###   #      ",
-        "#                    #      ",
-        "#                    #      ",
-        "##############  w#####      "
-    ];
+// --------------------
+//  Carré blanc & contenu
+// --------------------
+let showWhiteSquare = false;
+let whiteSquareSize = 200;
+let whiteSquareX, whiteSquareY;
 
-    let map3 = [
-        "#############################",
-        "#   ##    ##     #######    #",
-        "### ##    ##     3######    #",
-        "# #                       ###",
-        "# #                       ###",
-        "# #                       ###",
-        "# #    ####               ###",
-        "# #    #### ##            ###",
-        "# #    #### ##            ###",
-        "###    ####               ###",
-        "#     #####               ###",
-        "#     ##### ##              #",
-        "#      #### ##               ",
-        "       ####                 w",
-        "p                            ",
-        "                        ### #",
-        "#                       ### #",
-        "#########  ##           ### #",
-        "#########  ##               #",
-        "############################"
-    ];
+// Carré rouge (dessiné en mode CORNER, en haut à gauche du carré blanc)
+let redSquare = { w: 50, h: 50 };
 
-    let map4 = [
-        "########################################",
-        "############   ####  #######       ##  #",
-        "############   ####  #######       ##  #",
-        "###            ####        #     #     #",
-        "###                    ##  #     #     #",
-        "###  ####              ##  #     #     #",
-        "#    ####                        #     #",
-        "#                                      #",
-        "#                                      #",
-        "#       ##                 #############",
-        "#       ##                           4##",
-        "#                               #    ###",
-        "                              ###      #",
-        "p           ####                #      #",
-        "            ####                       #",
-        "#                                  ### #",
-        "#                                  ### #",
-        "####   #######      #######        ### #",
-        "####   #######      #######            #",
-        "############### w ######################"
-    ];
-    let map5 = [
-        "########################################",
-        "#                                      #",
-        "#                                      #",
-        "#                                      #",
-        "#                                      #",
-        "#                                      #",
-        "########################################",
-        "                                       #",
-        "                                       #",
-        "p                                      w",
-        "                                       #",
-        "                                       #",
-        "                                       #",
-        "########################################",
-        "#                                      #",
-        "#                                      #",
-        "#                                      #",
-        "#                                      #",
-        "#                                      #",
-        "########################################"
-    ];
+// --------------------
+//  Carrés gris (optionnels)
+// --------------------
+let squares = [];
+let squareSize = 30;
+let draggedSquareIndex = -1; // index d'un éventuel carré gris
+let offsetX = 0;
+let offsetY = 0;
 
-    function preload() {
-        spriteDetective = loadImage('assets/sprite_detective.png')
-        spriteImage = loadImage("assets/new_sprite_3.png");
-        tileImg = loadImage("assets/tile.png");
-        room = loadImage("assets/bg-level-1.png");
-        room2 = loadImage("assets/bg-level-2.png");
-        room3 = loadImage("assets/bg-level-3.png");
-        room4 = loadImage("assets/bg-level-4.png");
-        room5 = loadImage("assets/bg-level-5.png");
-        JMH = loadFont('assets/JMH Typewriter.ttf');
-        LODGER = loadFont('assets/JollyLodger-Regular.ttf');
-        mySound = loadSound('assets/bgmusique.mp3');
-        obj1 = loadImage('assets/indice2alpha0.png');
-        obj2 = loadImage('assets/indice2alpha0.png');
-        obj3 = loadImage('assets/indice2alpha0.png');
-        obj4 = loadImage('assets/indice2alpha0.png');
-        test = loadImage('assets/pc.png');
-        win = loadImage('assets/tile.png');
+// --------------------
+//  Carrés verts (déplaçables)
+// --------------------
+let greenSquares = [];
+let draggedGreenIndex = -1; 
 
-        imgIndice1 = loadImage('assets/indice1.png');
-        imgIndice2 = loadImage('assets/indice2.png');
-        imgIndice3 = loadImage('assets/indice3.png');
-        imgIndice4 = loadImage('assets/indice4.png');
+/***********************
+ *   FONCTION CENTRER  *
+ ***********************/
+function centerCanvas() {
+  let x = (windowWidth - width) / 2;
+  let y = (windowHeight - height) / 2;
+  cnv.position(x, y);
+}
 
-        pendu = loadImage('assets/Pendu.png');
+/**
+ * Centre le carré blanc dans le canvas 
+ * (utile après chaque resizeCanvas())
+ */
+function centerWhiteSquare() {
+  whiteSquareX = width / 2;
+  whiteSquareY = height / 2;
+}
+
+/***********************
+ *      PRELOAD()      *
+ ***********************/
+function preload() {
+  spriteDetective = loadImage('assets/sprite_detective.png');
+  spriteImage     = loadImage("assets/new_sprite_3.png");
+  tileImg         = loadImage("assets/tile.png");
+  room            = loadImage("assets/MAPS/Chambre.png");
+
+  JMH     = loadFont('assets/JMH Typewriter.ttf');
+  LODGER  = loadFont('assets/JollyLodger-Regular.ttf');
+  mySound = loadSound('assets/bgmusique.mp3');
+
+  obj1       = loadImage('assets/indice2alpha0.png');
+  imgIndice1 = loadImage('assets/indice1.png');
+  win        = loadImage('assets/tile.png');
+}
+
+/***********************
+ *       SETUP()       *
+ ***********************/
+function setup() {
+  cnv = createCanvas(ROWS * tileWidth, COLS * tileWidth);
+  centerCanvas();
+  centerWhiteSquare();
+
+  rectMode(CENTER);
+  textAlign(CENTER);
+  imageMode(CENTER);
+
+  mySound.loop();
+
+  volumeSlider = createSlider(0, 1, 0.5, 0.01);
+  volumeSlider.position(width / 2 - 25, height / 2);
+  volumeSlider.style('width', '300px');
+  volumeSlider.input(() => {
+    mySound.setVolume(volumeSlider.value());
+  });
+  volumeSlider.hide();
+
+  // On crée 16 carrés verts pour le carré blanc
+  initGreenSquares();
+}
+
+/**
+ * Initialise (ou ré-initialise) la grille de 4×4 carrés verts
+ */
+function initGreenSquares() {
+  greenSquares = []; 
+
+  let rows = 4;
+  let cols = 4;
+
+  // Taille du slot (chaque case 4×4 à l’intérieur du grand carré blanc)
+  let cellSlotW = whiteSquareSize / cols;
+  let cellSlotH = whiteSquareSize / rows;
+  
+  // On dessine un carré vert deux fois plus petit que le slot
+  let cellW = cellSlotW / 2; 
+  let cellH = cellSlotH / 2;
+
+  // On crée 16 carrés verts, centrés dans chaque slot
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let slotCenterX = (whiteSquareX - whiteSquareSize / 2) + c * cellSlotW + cellSlotW / 2;
+      let slotCenterY = (whiteSquareY - whiteSquareSize / 2) + r * cellSlotH + cellSlotH / 2;
+
+      let sq = {
+        x: slotCenterX,
+        y: slotCenterY,
+        w: cellW,
+        h: cellH,
+        color: 'green'
+      };
+      greenSquares.push(sq);
+    }
+  }
+}
+
+/**
+ * Gère le redimensionnement de la fenêtre :
+ */
+function windowResized() {
+  centerCanvas();
+  centerWhiteSquare();
+  initGreenSquares();
+}
+
+/***********************
+ *        DRAW()       *
+ ***********************/
+function draw() {
+  clear();
+
+  if (gameState === "splash") {
+    splash();
+  } 
+  else if (gameState === "settings") {
+    settings();
+  } 
+  else if (gameState === "credits") {
+    credits();
+  } 
+  else if (gameState === "level1") {
+    // Appel unique à level1() : on l'a déjà fait, maintenant on dessine...
+    if (!level1Called) {
+      level1();
+      level1Called = true;
     }
 
-    function setup() {
-        createCanvas(ROWS * tileWidth, COLS * tileWidth);
-        rectMode(CENTER);
-        textAlign(CENTER);
-        imageMode(CENTER);
+    // On dessine l'image de fond à chaque frame (pour qu'elle reste visible)
+    imageMode(CORNER);
+    image(room, 0, 0, width, height);
 
-        mySound.loop();
+    // Mouvements/affichage du joueur
+    player.update();
+    player.draw();
 
-        volumeSlider = createSlider(0, 1, 0.5, 0.01);
-        volumeSlider.position(width / 2 - 25, height / 2);
-        volumeSlider.style('width', '300px');
-        volumeSlider.input(() => {
-            mySound.setVolume(volumeSlider.value());
-        });
-
-        volumeSlider.hide();
-
+    // Affiche l'image d'indice si besoin
+    if (showMessage1) {
+      image(imgIndice1, width / 2, height / 2);
     }
 
-    function draw() {
-        clear();
-        if (gameState !== "settings") {
-            volumeSlider.hide();
-        }
+    // Éléments interactifs (texte, etc.)
+    drawInteractiveElements();
+  }
 
-        if (gameState === "splash") {
-            splash();
-        } else if (gameState === "settings") {
-            settings();
-        } else if (gameState === "win") {
-            clearSprites();
-            winScreen();
-        } else if (gameState === "level1") {
-            if (!level1Called) {
-                level1();
-                level1Called = true;
-            }
-            if (indice1.alpha === 0 && collided(player.pos.x, player.pos.y, player.w, player.h, wintile.pos.x, wintile.pos.y, wintile.w, wintile.h)) {
-                gameState = "win";
-            }
-          
-            image(room, width / 2, height / 2, width, height);
-            player.update(); // Mettre à jour la position du joueur
-            player.draw(); // Dessiner le joueur
-            if (showMessage1) {
-                image(imgIndice1, width / 2, height / 2);
-            }
-            if (dist(player.pos.x, player.pos.y, indice1.pos.x, indice1.pos.y) < 2 && showMessage1 ===false && indice1.alpha !== 0) {
-                fill(38,38,38);
-                rect(width/2 - 100, height/2 +150 - 25, 250, 50);
-                fill(255);
-                textAlign(CENTER, CENTER);
-                textSize(12);
-                text("Appuyer sur 'e' pour fouiller", width/2 - 100, height/2 +120);
-              }
-            keyPressed();
-            keyReleased();
-        } else if (gameState === "level2") {
-            if (!level2Called) {
-                level2();
-                level2Called = true;
-            }
-            if (indice2.alpha === 0 && collided(player.pos.x, player.pos.y, player.w, player.h, wintile.pos.x, wintile.pos.y, wintile.w, wintile.h)) {
-                gameState = "win";
-            }
-          
-            image(room2, width / 2, height / 2, width, height);
-            bricks.draw(); 
-            player.draw();
-            if (showMessage2) {
-                image(imgIndice2, width / 2, height / 2);
+  // Le carré blanc (avec ses carrés verts, etc.)
+  if (showWhiteSquare) {
+    drawWhiteSquare();
+  }
+}
 
-            }
-            if (dist(player.pos.x, player.pos.y, indice2.pos.x, indice2.pos.y) < 2 && showMessage2 === false && indice2.alpha !== 0) {
-                fill(38,38,38);
-                rect(width/2 + 50, height/2 - 50 - 25, 250, 50);
-                fill(255);
-                textAlign(CENTER, CENTER);
-                textSize(12);
-                text("Appuyer sur 'e' pour fouiller", width/2 - 100, height/2 +120);
-              }
-            keyPressed();
-            keyReleased();
-        } else if (gameState === "level3") {
-            if (!level3Called) {
-                level3();
-                level3Called = true;
-            }
-            if (indice3.alpha === 0 && collided(player.pos.x, player.pos.y, player.w, player.h, wintile.pos.x, wintile.pos.y, wintile.w, wintile.h)) {
-                gameState = "win";
-            }
-        
-            image(room3, width / 2, height / 2, width, height);
-            player.update(); // Mettre à jour la position du joueur
-            bricks.draw(); // Dessiner les briques
-            player.draw(); // Dessiner le joueur
-            if (showMessage3) {
-                image(imgIndice3, width / 2, height / 2);
-            }
-            if (dist(player.pos.x, player.pos.y, indice3.pos.x, indice3.pos.y) < 2 && showMessage3 ===false && indice3.alpha !== 0) {
-                fill(38,38,38);
-                rect(width/2 - 100, height/2 +150 - 25, 250, 50);
-                fill(255);
-                textAlign(CENTER, CENTER);
-                textSize(12);
-                text("Appuyer sur 'e' pour fouiller", width/2 - 100, height/2 +120);
-              }
-            keyPressed();
-            keyReleased();
-        } else if (gameState === "level4") {
-            if (!level4Called) {
-                level4();
-                level4Called = true;
-            }
-            if (indice4.alpha === 0 && collided(player.pos.x, player.pos.y, player.w, player.h, wintile.pos.x, wintile.pos.y, wintile.w, wintile.h)) {
-                gameState = "win";
-            }
-            if (dist(player.pos.x, player.pos.y, indice4.pos.x, indice4.pos.y) < 2 && showMessage4 ===false && indice4.alpha !== 0) {
-                fill(38,38,38);
-                rect(width/2 - 100, height/2 +150 - 25, 250, 50);
-                fill(255);
-                textAlign(CENTER, CENTER);
-                textSize(12);
-                text("Appuyer sur 'e' pour fouiller", width/2 - 100, height/2 +120);
-              }
-          
-            image(room4, width / 2, height / 2, width, height);
-            player.update(); // Mettre à jour la position du joueur
-            bricks.draw(); // Dessiner les briques
-            player.draw(); // Dessiner le joueur
-            if (showMessage4) {
-                image(imgIndice4, width / 2, height / 2);
+/***********************
+ *   ÉCRANS SECONDAIRES
+ ***********************/
+function splash() {
+  resizeCanvas(ROWS * tileWidth, COLS * tileWidth);
+  centerCanvas();
+  centerWhiteSquare();
 
+  // Réinitialise la grille de carrés verts (optionnel)
+  initGreenSquares();
 
-            }
-            keyPressed();
-            keyReleased();
-        } 
-        else if (gameState === "level5") {
-            if (!level5Called) {
-                level5();
-                level5Called = true;
-            }
-            // Dessiner l'image de fond en premier
-            image(room5, width / 2, height / 2, width, height);
-            player.update(); // Mettre à jour la position du joueur
-            bricks.draw(); // Dessiner les briques
-            player.draw(); // Dessiner le joueur
-            keyPressed();
-            keyReleased();
-            if (collided(player.pos.x, player.pos.y, player.w, player.h, wintile.pos.x, wintile.pos.y, wintile.w, wintile.h)) {
-                gameState = "Fin";
-            }
-        } else if (gameState === "Fin") {
-            end();
-        } else if (gameState === "credits") {
-            credits(); // Afficher les crédits
-        }
+  clear();
+  background(38, 38, 38);
 
-        function mouseDragged() {
-            mySound.setVolume(volumeSlider.value());
-        }
+  fill(255);
+  textFont(LODGER);
+  textSize(80);
+  text("Carlton's Stories", width / 2, 120);
 
+  fill(89, 135, 126);
+  textFont(JMH);
+  textSize(20);
+  text("BY STUDIO NAME", width / 2, 160);
 
-        function settings() {
-            background(0);
-            fill(255);
-            noStroke();
-            textAlign(CENTER, CENTER);
-            textFont(JMH);
-            textSize(20);
-            text("Musique :", width / 2 - 20, height / 2 - 70);
+  // Bouton "Click to start"
+  fill(89, 135, 126);
+  rect(width / 2, height / 2 + 40, 300, 55, 5);
+  fill(255);
+  textFont(JMH);
+  textSize(30);
+  text("Click to start", width / 2, height / 2 + 50);
 
+  // Clic sur le bouton
+  if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 &&
+      mouseY >= height / 2 + 10 && mouseY <= height / 2 + 65 && mouseIsPressed) {
+    gameState = "level1";
+  }
 
+  // Survol du bouton
+  if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 &&
+      mouseY >= height / 2 + 10 && mouseY <= height / 2 + 65) {
+    fill("white");
+    rect(width / 2, height / 2 + 40, 300, 55, 5);
+    fill(89, 135, 126);
+    text("Click to start", width / 2, height / 2 + 50);
+  }
+}
 
-            fill(255);
-            noStroke();
-            textAlign(CENTER, CENTER);
-            textFont(JMH);
-            textSize(20);
-            text(parseInt(volumeSlider.value() * 100) + "%", width / 2 + 55, height / 2 - 70);
+function settings() {
+  background(50);
+  fill(255);
+  textSize(32);
+  text("Settings Screen", width / 2, height / 2);
+}
 
-            fill(255);
-            textFont(LODGER);
-            textSize(80);
-            text("Options", width / 2, 120);
-            fill(89, 135, 126);
-            rect(width / 2, height / 2 + 200, 300, 55, 5);
-            fill(255);
-            textFont(JMH);
-            textSize(30);
-            text("Menu", width / 2, height / 2 + 210);
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229 && mouseIsPressed == true) {
-                gameState = "splash"
-                console.log("kakou kakou");
-            }
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229) {
-                fill("white");
-                rect(width / 2, height / 2 + 200, 300, 55, 5);
-                fill(89, 135, 126);
-                textFont(JMH);
-                textSize(30);
-                text("Menu", width / 2, height / 2 + 210);
-            }
-            volumeSlider.show();
-        }
+function credits() {
+  background(90);
+  fill(255);
+  textSize(32);
+  text("Credits Screen", width / 2, height / 2);
+}
 
-        function credits() {
-            background(0);
-            fill(255);
-            textFont(LODGER);
-            textSize(80);
-            text("Credits   ", width / 2, 120);
-            fill(89, 135, 126);
-            rect(width / 2, height / 2 + 200, 300, 55, 5);
-            fill(255);
-            textFont(JMH);
-            textSize(30);
-            text("Menu", width / 2, height / 2 + 210);
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229 && mouseIsPressed == true) {
-                gameState = "splash"
-                console.log("kakou kakou");
-            }
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229) {
-                fill("white");
-                rect(width / 2, height / 2 + 200, 300, 55, 5);
-                fill(89, 135, 126);
-                textFont(JMH);
-                textSize(30);
-                text("Menu", width / 2, height / 2 + 210);
-            }
+/***********************
+ *     LEVEL1 CODE     *
+ ***********************/
+function level1() {
+  // Redimensionne pour le niveau 1
+  resizeCanvas(ROWS1 * tileWidth, COLS1 * tileWidth);
+  centerCanvas();
+  centerWhiteSquare();
+  initGreenSquares();
 
-        }
+  clear();
 
-        function clearSprites() {
-            for (let i = allSprites.length; i--;) {
-                allSprites[i].remove();
-            }
-        }
-
-        function level1() {
-            resizeCanvas(ROWS1 * tileWidth, COLS1 * tileWidth);
-            clear();
-        
-            allSprites.pixelPerfect = true;
-            allSprites.rotationLock = true;
-            allSprites.tileSize = tileWidth;
-            bricks = new Group();
-            bricks.img = tileImg;
-            bricks.tile = "#";
-            bricks.collider = 'static';
-            bricks.alpha = 0
-        
-            indice1 = new Sprite(8, 8, 1, 1);
-            indice1.img = obj1;
-            indice1.tile = '1';
-            indice1.collider = "static";
-            indice1.scale = 1;
-            indice1.alpha = 255;
-        
-            wintile = new Sprite(1, 1, 1, 1);
-            wintile.img = win;
-            wintile.tile = 'w';
-            wintile.collider = "static";
-        
-            indice2 = new Sprite(-10, -10, 1, 1);
-            indice3 = new Sprite(-10, -10, 1, 1);
-            indice4 = new Sprite(-10, -10, 1, 1);
-        
-            player = new Sprite(0, 0, 1, 1);
-            player.spriteSheet = spriteImage;
-            player.tile = "p";
-            player.vel = {
-                x: 0,
-                y: 0
-            };
-            player.removeColliders();
-            player.addCollider(0, 0, 2, 2);
-            player.addAnis({
-                stand: {
-                    w: 2,
-                    h: 2,
-                    row: 0,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                down: {
-                    w: 2,
-                    h: 2,
-                    row: 1,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                right: {
-                    w: 2,
-                    h: 2,
-                    row: 2,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                up: {
-                    w: 2,
-                    h: 2,
-                    row: 3,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                left: {
-                    w: 2,
-                    h: 2,
-                    row: 4,
-                    frames: 4,
-                    frameDelay: 20
-                },
-            });
-            player.changeAni("stand");
-            player.scale = 1;
-            // player.debug = true;
-        
-            for (let j = 0; j < map.length; j++) {
-                for (let i = 0; i < map[j].length; i++) {
-                    if (map[j][i] === '1') {
-                        indice1.pos.set(i , j);
-                    } else if (map[j][i] === 'w') {
-                        wintile.pos.set(i , j);
-                    }
-                }
-            }
-        
-            new Tiles(map, 0.5, 0.5, 1, 1);
-        }
-        
-
-        function level2() {
-            resizeCanvas(ROWS2 * tileWidth, COLS2 * tileWidth);
-            allSprites.pixelPerfect = true;
-            allSprites.rotationLock = true;
-            allSprites.tileSize = tileWidth;
-            bricks = new Group();
-            bricks.img = tileImg;
-            bricks.tile = "#";
-            bricks.collider = 'static';
-            bricks.alpha = 0;
-            
-
-            indice2 = new Sprite(8, 8, 1, 1); // Ajouter cette ligne pour définir 
-            indice2.img = obj2;
-            indice2.tile = '2';
-            indice2.collider = "static";
-            indice2.alpha = 255;
-
-
-
-
-            wintile = new Sprite(1, 1, 1, 1);
-            wintile.img = win;
-            wintile.tile = 'w';
-            wintile.collider = "static";
-
-
-            player = new Sprite(1, 1, 1, 1);
-            player.spriteSheet = spriteImage;
-            player.tile = "p";
-            player.vel = {
-                x: 0,
-                y: 0
-            };
-            player.removeColliders();
-            player.addCollider(0, 0, 2, 2);
-            player.addAnis({
-                stand: {
-                    w: 2,
-                    h: 2,
-                    row: 0,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                down: {
-                    w: 2,
-                    h: 2,
-                    row: 1,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                right: {
-                    w: 2,
-                    h: 2,
-                    row: 2,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                up: {
-                    w: 2,
-                    h: 2,
-                    row: 3,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                left: {
-                    w: 2,
-                    h: 2,
-                    row: 4,
-                    frames: 4,
-                    frameDelay: 20
-                },
-            });
-            player.changeAni("stand");
-            player.scale = 1;
-            // player.debug = true;
-            new Tiles(map2, 0.5, 0.5, 1, 1);
-        }
-
-        function level3() {
-            resizeCanvas(ROWS3 * tileWidth, COLS3 * tileWidth);
-            allSprites.pixelPerfect = true;
-            allSprites.rotationLock = true;
-            allSprites.tileSize = tileWidth;
-            bricks = new Group();
-            bricks.img = tileImg;
-            bricks.tile = "#";
-            bricks.collider = 'static';
-            bricks.alpha = 0
-
-            indice3 = new Sprite(8, 8, 1, 1); // Ajouter cette ligne pour définir 
-            indice3.img = obj3;
-            indice3.tile = '3';
-            indice3.collider = "static";
-            indice3.alpha = 255;
-
-            wintile = new Sprite(1, 1, 1, 1);
-            wintile.img = win;
-            wintile.tile = 'w';
-            wintile.collider = "static";
-
-            player = new Sprite(1, 1, 1, 1);
-            player.spriteSheet = spriteImage;
-            player.tile = "p";
-            player.vel = {
-                x: 0,
-                y: 0
-            };
-            player.removeColliders();
-            player.addCollider(0, 0, 2, 2);
-            player.addAnis({
-                stand: {
-                    w: 2,
-                    h: 2,
-                    row: 0,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                down: {
-                    w: 2,
-                    h: 2,
-                    row: 1,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                right: {
-                    w: 2,
-                    h: 2,
-                    row: 2,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                up: {
-                    w: 2,
-                    h: 2,
-                    row: 3,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                left: {
-                    w: 2,
-                    h: 2,
-                    row: 4,
-                    frames: 4,
-                    frameDelay: 20
-                },
-            });
-            player.changeAni("stand");
-            player.scale = 1;
-            // player.debug = true;
-            new Tiles(map3, 0.5, 0.5, 1, 1);
-        }
-
-        function level4() {
-            resizeCanvas(ROWS4 * tileWidth, COLS4 * tileWidth);
-            allSprites.pixelPerfect = true;
-            allSprites.rotationLock = true;
-            allSprites.tileSize = tileWidth;
-            bricks = new Group();
-            bricks.img = tileImg;
-            bricks.tile = "#";
-            bricks.collider = 'static';
-            bricks.alpha = 0
-
-
-            indice4 = new Sprite(8, 8, 1, 1); // Ajouter cette ligne pour définir 
-            indice4.img = obj3;
-            indice4.tile = '4';
-            indice4.collider = "static";
-            indice4.alpha = 255;
-
-            wintile = new Sprite(1, 1, 1, 1);
-            wintile.img = win;
-            wintile.tile = 'w';
-            wintile.collider = "static";
-
-            player = new Sprite(1, 1, 1, 1);
-            player.spriteSheet = spriteImage;
-            player.tile = "p";
-            player.vel = {
-                x: 0,
-                y: 0
-            };
-            player.removeColliders();
-            player.addCollider(0, 0, 2, 2);
-            player.addAnis({
-                stand: {
-                    w: 2,
-                    h: 2,
-                    row: 0,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                down: {
-                    w: 2,
-                    h: 2,
-                    row: 1,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                right: {
-                    w: 2,
-                    h: 2,
-                    row: 2,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                up: {
-                    w: 2,
-                    h: 2,
-                    row: 3,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                left: {
-                    w: 2,
-                    h: 2,
-                    row: 4,
-                    frames: 4,
-                    frameDelay: 20
-                },
-            });
-            player.changeAni("stand");
-            player.scale = 1;
-            // player.debug = true;
-            new Tiles(map4, 0.5, 0.5, 1, 1);
-        }
-        function level5() {
-            resizeCanvas(ROWS4 * tileWidth, COLS4 * tileWidth);
-            allSprites.pixelPerfect = true;
-            allSprites.rotationLock = true;
-            allSprites.tileSize = tileWidth;
-            bricks = new Group();
-            bricks.img = tileImg;
-            bricks.tile = "#";
-            bricks.collider = 'static';
-            bricks.alpha = 0
-
-
-            wintile = new Sprite(1, 1, 1, 1);
-            wintile.img = win;
-            wintile.tile = 'w';
-            wintile.collider = "static";
-
-            player = new Sprite(1, 1, 1, 1);
-            player.spriteSheet = spriteImage;
-            player.tile = "p";
-            player.vel = {
-                x: 0,
-                y: 0
-            };
-            player.removeColliders();
-            player.addCollider(0, 0, 2, 2);
-            player.addAnis({
-                stand: {
-                    w: 2,
-                    h: 2,
-                    row: 0,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                down: {
-                    w: 2,
-                    h: 2,
-                    row: 1,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                right: {
-                    w: 2,
-                    h: 2,
-                    row: 2,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                up: {
-                    w: 2,
-                    h: 2,
-                    row: 3,
-                    frames: 4,
-                    frameDelay: 20
-                },
-                left: {
-                    w: 2,
-                    h: 2,
-                    row: 4,
-                    frames: 4,
-                    frameDelay: 20
-                },
-            });
-            player.changeAni("stand");
-            player.scale = 1;
-            // player.debug = true;
-            new Tiles(map5, 0.5, 0.5, 1, 1);
-        }
-
-        function end() {
-            resizeCanvas(ROWS4 * tileWidth, COLS4 * tileWidth);
-            image(pendu, width/2, height/2);
-        }
-
-
-        function splash() {
-            resizeCanvas(ROWS * tileWidth, COLS * tileWidth);
-            clear();
-
-            background(38, 38, 38);
-            fill(255);
-            textFont(LODGER);
-            textSize(80);
-            text("Carlton's Stories", width / 2, 120);
-            fill(89, 135, 126);
-            fill(255);
-            textFont(JMH);
-            textSize(20);
-            text("BY STUDIO NAME", width / 2, 160);
-            fill(89, 135, 126);
-            rect(width / 2, height / 2 + 40, 300, 55, 5);
-            fill(255);
-            textFont(JMH);
-            textSize(30);
-            text("Click to start", width / 2, height / 2 + 50);
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 10 && mouseY <= height / 2 + 65 && mouseIsPressed == true) {
-                gameState = "level1";
-            }
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 10 && mouseY <= height / 2 + 65) {
-                fill("white");
-                rect(width / 2, height / 2 + 40, 300, 55, 5);
-                fill(89, 135, 126);
-                textFont(JMH);
-                textSize(30);
-                text("Click to start", width / 2, height / 2 + 50);
-            }
-            fill("white");
-            rect(width / 2 - 77.5, height / 2 + 105, 145, 55, 5);
-            fill(89, 135, 126);
-            textFont(JMH);
-            textSize(30);
-            text("Options", width / 2 - 77.5, height / 2 + 110);
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 - 5 && mouseY >= height / 2 + 80 && mouseY <= height / 2 + 130 && mouseIsPressed == true) {
-                console.log("kakou kakou")
-                gameState = "settings";
-            }
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 - 5 && mouseY >= height / 2 + 80 && mouseY <= height / 2 + 130) {
-                fill(89, 135, 126);
-                rect(width / 2 - 77.5, height / 2 + 105, 145, 55, 5);
-                fill('white');
-                textFont(JMH);
-                textSize(30);
-                text("Options", width / 2 - 77.5, height / 2 + 110);
-            }
-            fill("white");
-            rect(width / 2 + 77.5, height / 2 + 105, 145, 55, 5);
-            fill(89, 135, 126);
-            textFont(JMH);
-            textSize(30);
-            text("Credits", width / 2 + 77.5, height / 2 + 110);
-            if (mouseX >= width / 2 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 80 && mouseY <= height / 2 + 130 && mouseIsPressed == true) {
-                gameState = "credits";
-            }
-            if (mouseX >= width / 2 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 80 && mouseY <= height / 2 + 130) {
-                fill(89, 135, 126);
-                rect(width / 2 + 77.5, height / 2 + 105, 145, 55, 5);
-                fill('white');
-                textFont(JMH);
-                textSize(30);
-                text("Credits", width / 2 + 77.5, height / 2 + 110);
-            }
-        }
-
-        function winScreen() {
-            resizeCanvas(ROWS * tileWidth, COLS * tileWidth);
-            background(0);
-            fill(255);
-            noStroke();
-            textAlign(CENTER, CENTER);
-            textFont(JMH);
-            textSize(20);
-            text("Good Job !", width / 2, height / 2);
-
-            fill(255);
-            textFont(LODGER);
-            textSize(80);
-            text("Go to the next room", width / 2, 120);
-            fill(89, 135, 126);
-            rect(width / 2, height / 2 + 200, 300, 55, 5);
-            fill(255);
-            textFont(JMH);
-            textSize(30);
-            text("Next room", width / 2, height / 2 + 195);
-
-            // Vérifier si le joueur a déjà terminé le niveau 1 et s'il a cliqué sur le bouton "Next level"
-            if (gameState === "win" && indice1.alpha === 0 && mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229 && mouseIsPressed) {
-                gameState = "level2";
-                level2Called = false; // Réinitialiser la variable level2Called pour permettre de charger le niveau 2
-            }
-
-            // Vérifier si le joueur a déjà terminé le niveau 2 et s'il a cliqué sur le bouton "Next level"
-            if (gameState === "win" && indice1.alpha === 255 && indice2.alpha === 0 && mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229 && mouseIsPressed) {
-                gameState = "level3";
-                level3Called = false; // Réinitialiser la variable level3Called pour permettre de charger le niveau 3
-            }
-            if (gameState === "win" && indice2.alpha === 255 && indice3.alpha === 0 && mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229 && mouseIsPressed) {
-                gameState = "level4";
-                level3Called = false; // Réinitialiser la variable level3Called pour permettre de charger le niveau 3
-            }
-            if (gameState === "win" && indice3.alpha === 255 && indice4.alpha === 0 && mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229 && mouseIsPressed) {
-                gameState = "level5";
-                level3Called = false; // Réinitialiser la variable level3Called pour permettre de charger le niveau 3
-            }
-
-            // Vérifier si la souris est survolée sur le bouton "Next level"
-            if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 && mouseY >= height / 2 + 173 && mouseY <= height / 2 + 229) {
-                fill("white");
-                rect(width / 2, height / 2 + 200, 300, 55, 5);
-                fill(89, 135, 126);
-                textFont(JMH);
-                textSize(30);
-                text("Next room", width / 2, height / 2 + 195);
-            }
-        }
-
-
-
-        function keyReleased() {
-            if (keyCode === ESCAPE && showMessage1 === true) {
-                showMessage1 = false;
-                console.log();
-            }
-            if (keyCode === ESCAPE && showMessage2) {
-                showMessage2 = false;
-            }
-            if (keyCode === ESCAPE && showMessage3) {
-                showMessage3 = false;
-            }
-            if (keyCode === ESCAPE && showMessage4) {
-                showMessage4 = false;
-            }
-        }
-
-        function keyPressed() {
-            if (key === 'e') {
-                if (!showMessage1 && indice1.alpha !== 0 && player.pos.dist(indice1.pos) < 3) {
-                    indice1.remove();
-                    indice1.alpha = 0;
-                    showMessage1 = true;
-                }
-                if (!showMessage2 && indice2.alpha !== 0 && player.pos.dist(indice2.pos) < 3) {
-                    indice2.remove();
-                    indice2.alpha = 0;
-                    indice1.alpha = 255;
-                    showMessage2 = true;
-                }
-                if (!showMessage3 && indice3.alpha !== 0 && player.pos.dist(indice3.pos) < 5) {
-                    indice3.remove();
-                    indice3.alpha = 0;
-                    indice2.alpha = 255;
-                    showMessage3 = true;
-                }
-                if (!showMessage4 && indice4.alpha !== 0 && player.pos.dist(indice4.pos) < 3) {
-                    indice4.remove();
-                    indice4.alpha = 0;
-                    indice3.alpha = 255;
-                    showMessage4 = true;
-                }
-
-            }
-            if (keyIsDown(RIGHT_ARROW)) {
-                player.changeAni("right");
-                player.vel.x = 0.1;
-                player.vel.y = 0;
-            }
-            if (keyIsDown(LEFT_ARROW)) {
-                player.changeAni("left");
-                player.vel.x = -0.1;
-                player.vel.y = 0;
-            }
-            if (keyIsDown(UP_ARROW)) {
-                player.changeAni("up");
-                player.vel.y = -0.1;
-                player.vel.x = 0;
-            }
-            if (keyIsDown(DOWN_ARROW)) {
-                player.changeAni("down");
-                player.vel.y = 0.1;
-                player.vel.x = 0;
-            }
-            if (!keyIsDown(RIGHT_ARROW) && !keyIsDown(LEFT_ARROW)) {
-                player.vel.x = 0;
-            }
-            if (!keyIsDown(UP_ARROW) && !keyIsDown(DOWN_ARROW)) {
-                player.vel.y = 0;
-            }
-        }
-
-        function collided(x1, y1, w1, h1, x2, y2, w2, h2) {
-            return (x1 < x2 + w2 &&
-                x1 + w1 > x2 &&
-                y1 < y2 + h2 &&
-                y1 + h1 > y2);
-        }
-
-        function isOpen(x, y) {
-            let i = floor(x);
-            let j = floor(y);
-            let tile = map[j][i];
-            if (tile == "#") {
-                return false;
-            } else {
-                return true;
-            }
-        }
-
+  // p5.play config
+  allSprites.pixelPerfect = true;
+  allSprites.rotationLock = true;
+  allSprites.tileSize = tileWidth;
+  
+  // Groupe "murs"
+  bricks = new Group();
+  bricks.img = tileImg;
+  bricks.tile = "#";
+  bricks.collider = 'static';
+  // bricks.alpha = 0; // si tu veux qu'ils soient invisibles, décommente
+  bricks.debug = true;
+    
+  // Indice
+  indice1 = new Sprite(8, 8, 1, 1);
+  indice1.img = obj1;
+  indice1.tile = '1';
+  indice1.collider = "static";
+  indice1.scale = 1;
+  indice1.alpha = 255;
+  
+  // Tuile de fin (win)
+  wintile = new Sprite(1, 1, 1, 1);
+  wintile.img = win;
+  wintile.tile = 'w';
+  wintile.collider = "static";
+  
+  // Joueur
+  player = new Sprite(0, 0, 1, 1);
+  player.spriteSheet = spriteImage;
+  player.tile = "p";
+  player.vel = { x: 0, y: 0 };
+  player.removeColliders();
+  player.addCollider(0, 0, 2, 2);
+  
+  // Animations
+  player.addAnis({
+    stand: { w: 2, h: 2, row: 0, frames: 4, frameDelay: 20 },
+    down:  { w: 2, h: 2, row: 1, frames: 4, frameDelay: 20 },
+    right: { w: 2, h: 2, row: 2, frames: 4, frameDelay: 20 },
+    up:    { w: 2, h: 2, row: 3, frames: 4, frameDelay: 20 },
+    left:  { w: 2, h: 2, row: 4, frames: 4, frameDelay: 20 },
+  });
+  player.changeAni("stand");
+  player.scale = 1;
+  
+  // Parcourt la map pour placer l'indice1, la tuile win, etc.
+  for (let j = 0; j < map.length; j++) {
+    for (let i = 0; i < map[j].length; i++) {
+      if (map[j][i] === '1') {
+        indice1.pos.set(i, j);
+      } else if (map[j][i] === 'w') {
+        wintile.pos.set(i, j);
+      } else if (map[j][i] === 'p') {
+        // Place le joueur s'il y a le caractère 'p' dans la map
+        player.pos.set(i, j);
+      }
     }
+  }
+  
+  // On construit les Tiles en (0,0), sans offset
+  new Tiles(map, 1, 1, 1, 1);
+
+  // NOTE : On NE DESSINE PAS l'image 'room' ici
+  // Elle sera redessinée dans draw(), tant que gameState === "level1".
+}
+
+/**
+ * Dessine les éléments interactifs (texte, etc.) en jeu
+ */
+function drawInteractiveElements() {
+  // Affiche un message si le joueur est proche de l'indice
+  if (indice1 && dist(player.pos.x, player.pos.y, indice1.pos.x, indice1.pos.y) < 2) {
+    fill(255);
+    textAlign(CENTER);
+    text("Appuyez sur 'E' pour interagir", width / 2, height - 50);
+  }
+}
+
+/***********************
+ *  DESSIN DU CARRÉ    *
+ ***********************/
+function drawWhiteSquare() {
+  // Dessin du carré blanc (centré)
+  rectMode(CENTER);
+  noStroke();
+  fill(255);
+  rect(whiteSquareX, whiteSquareY, whiteSquareSize, whiteSquareSize);
+
+  // Carré rouge (coin supérieur gauche du carré blanc)
+  rectMode(CORNER);
+  fill('red');
+  rect(
+    whiteSquareX - whiteSquareSize / 2,  
+    whiteSquareY - whiteSquareSize / 2,  
+    redSquare.w,
+    redSquare.h
+  );
+  rectMode(CENTER);
+
+  // Dessin des carrés verts
+  for (let g of greenSquares) {
+    fill(g.color);
+    rect(g.x, g.y, g.w, g.h);
+  }
+
+  // Dessin des carrés gris (optionnel)
+  for (let s of squares) {
+    fill(s.color || 'grey');
+    rect(s.x, s.y, s.w, s.h);
+  }
+
+  // Bouton "close"
+  drawCloseButton();
+}
+
+/**
+ * Dessine le bouton "close" (X)
+ */
+function drawCloseButton() {
+  rectMode(CORNER);
+
+  let closeBtn = { x: 0, y: 0, w: 20, h: 20 };
+  closeBtn.x = (whiteSquareX + whiteSquareSize / 2) - closeBtn.w;
+  closeBtn.y = (whiteSquareY - whiteSquareSize / 2);
+
+  fill(200, 60, 60);
+  rect(closeBtn.x, closeBtn.y, closeBtn.w, closeBtn.h);
+
+  stroke(255);
+  strokeWeight(2);
+  line(closeBtn.x + 5, closeBtn.y + 5, closeBtn.x + closeBtn.w - 5, closeBtn.y + closeBtn.h - 5);
+  line(closeBtn.x + 5, closeBtn.y + closeBtn.h - 5, closeBtn.x + closeBtn.w - 5, closeBtn.y + 5);
+  noStroke();
+
+  // Ferme le carré blanc si on clique sur le bouton
+  if (
+    mouseIsPressed &&
+    mouseX >= closeBtn.x && mouseX <= closeBtn.x + closeBtn.w &&
+    mouseY >= closeBtn.y && mouseY <= closeBtn.y + closeBtn.h
+  ) {
+    showWhiteSquare = false;
+  }
+
+  rectMode(CENTER);
+}
+
+/***********************
+ * ÉVÉNEMENTS SOURIS   *
+ ***********************/
+function mousePressed() {
+  if (showWhiteSquare) {
+    // Test drag & drop sur carrés gris
+    for (let i = squares.length - 1; i >= 0; i--) {
+      let s = squares[i];
+      let left   = s.x - s.w / 2;
+      let right  = s.x + s.w / 2;
+      let top    = s.y - s.h / 2;
+      let bottom = s.y + s.h / 2;
+
+      if (mouseX > left && mouseX < right && mouseY > top && mouseY < bottom) {
+        draggedSquareIndex = i;
+        offsetX = mouseX - s.x;
+        offsetY = mouseY - s.y;
+        return;
+      }
+    }
+
+    // Test drag & drop sur carrés verts
+    for (let i = greenSquares.length - 1; i >= 0; i--) {
+      let g = greenSquares[i];
+      let left   = g.x - g.w / 2;
+      let right  = g.x + g.w / 2;
+      let top    = g.y - g.h / 2;
+      let bottom = g.y + g.h / 2;
+
+      if (mouseX > left && mouseX < right && mouseY > top && mouseY < bottom) {
+        draggedGreenIndex = i;
+        offsetX = mouseX - g.x;
+        offsetY = mouseY - g.y;
+        return;
+      }
+    }
+  }
+}
+
+function mouseDragged() {
+  // Carré gris
+  if (draggedSquareIndex !== -1) {
+    let s = squares[draggedSquareIndex];
+    s.x = mouseX - offsetX;
+    s.y = mouseY - offsetY;
+  }
+  // Carré vert
+  else if (draggedGreenIndex !== -1) {
+    let g = greenSquares[draggedGreenIndex];
+    g.x = mouseX - offsetX;
+    g.y = mouseY - offsetY;
+  }
+}
+
+function mouseReleased() {
+  // Carré gris
+  if (draggedSquareIndex !== -1) {
+    draggedSquareIndex = -1;
+  }
+
+  // Carré vert
+  if (draggedGreenIndex !== -1) {
+    let g = greenSquares[draggedGreenIndex];
+
+    // S'il chevauche le carré rouge, on le retire
+    if (isOverlappingRectCorner(g)) {
+      greenSquares.splice(draggedGreenIndex, 1);
+    }
+    draggedGreenIndex = -1;
+  }
+}
+
+/***********************
+ * ÉVÉNEMENTS CLAVIER  *
+ ***********************/
+function keyPressed() {
+  if (player && player.vel) {
+    if (keyIsDown(RIGHT_ARROW)) {
+      player.changeAni("right");
+      player.vel.x = 0.2;
+      player.vel.y = 0;
+    }
+    if (keyIsDown(LEFT_ARROW)) {
+      player.changeAni("left");
+      player.vel.x = -0.2;
+      player.vel.y = 0;
+    }
+    if (keyIsDown(UP_ARROW)) {
+      player.changeAni("up");
+      player.vel.x = 0;
+      player.vel.y = -0.2;
+    }
+    if (keyIsDown(DOWN_ARROW)) {
+      player.changeAni("down");
+      player.vel.x = 0;
+      player.vel.y = 0.2;
+    }
+
+    // Interaction : 'E'
+    if (key === 'e' || key === 'E') {
+      showWhiteSquare = true;
+    }
+  }
+}
+
+function keyReleased() {
+  if (player) {
+    player.vel.x = 0;
+    player.vel.y = 0;
+    player.changeAni("stand");
+  }
+}
+
+/***********************
+ *     COLLISIONS      *
+ ***********************/
+
+/**
+ * Vérifie si un carré (vert) centré (g.x, g.y, g.w, g.h)
+ * chevauche le carré rouge, dessiné en CORNER.
+ */
+function isOverlappingRectCorner(greenSq) {
+  // Bords du carré vert (mode CENTER)
+  let sqLeft   = greenSq.x - greenSq.w / 2;
+  let sqRight  = greenSq.x + greenSq.w / 2;
+  let sqTop    = greenSq.y - greenSq.h / 2;
+  let sqBottom = greenSq.y + greenSq.h / 2;
+
+  // Bords du carré rouge (mode CORNER)
+  let redLeft   = whiteSquareX - whiteSquareSize / 2;
+  let redTop    = whiteSquareY - whiteSquareSize / 2;
+  let redRight  = redLeft + redSquare.w;
+  let redBottom = redTop + redSquare.h;
+
+  // Test de non-collision
+  if (
+    sqRight < redLeft  ||
+    sqLeft  > redRight ||
+    sqBottom < redTop  ||
+    sqTop    > redBottom
+  ) {
+    return false;
+  }
+  return true;
+}

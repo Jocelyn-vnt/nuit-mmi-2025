@@ -21,9 +21,7 @@ let COLS = 20;
 let ROWS1 = 24; 
 let COLS1 = 16;
 
-// Canvas (p5.js)
-let canvasWidth = 480;    
-let canvasHeight = 320;   
+// Canvas p5.js
 let cnv;
 
 // États du jeu
@@ -34,19 +32,19 @@ let volumeSlider;
 // La map du niveau 1
 let map = [
   "#######################",
-  "#                     #",
-  "#                     #",
-  "#                     #",
-  "#                     #",
-  "#                     #",
-  "#            p        #",
-  "#                     #",
-  "#                     #",
-  "#                     #",
-  "#                     #",
-  "#                     #",
-  "#                     #",
-  "#                     #",
+  "#########     #########",
+  "#########     #########",
+  "#########     #########",
+  "#########             #",
+  "###                   #",
+  "###          p        #",
+  "###                   #",
+  "###                   #",
+  "###                   #",
+  "###                   #",
+  "##1                   #",
+  "###                   #",
+  "###                   #",
   "#######################",
 ];
 
@@ -55,82 +53,85 @@ let imgIndice1;
 let win;
 
 // --------------------
-//  Image pour remplacer la fenêtre
-// --------------------
-let windowsxp; 
+//  Image pour la « fenêtre »
+let windowsxp;
 
 // --------------------
-//  Fenêtre (auparavant « carré blanc »)
-// --------------------
-
-// Largeur/hauteur fixes : 192×144
+//  Fenêtre (ancien « carré blanc »)
 let whiteSquareW = 384; 
 let whiteSquareH = 288;
-
-// Coordonnées du centre de la « fenêtre »
 let whiteSquareX, whiteSquareY;
-
-// Affichage ou non de la fenêtre
 let showWhiteSquare = false;
 
-// Carré rouge dans le coin sup-gauche de la fenêtre
+// Carré rouge en haut à gauche
 let redSquare = { w: 50, h: 50 };
 
-// --------------------
-//  Carrés gris (optionnels)
-// --------------------
+// 12 images file 1..12
+let fileImages = [];
+let greenSquares = [];
+let draggedGreenIndex = -1;
+
+// Fichiers critiques (à supprimer)
+let criticalIndices = [0,1,4,5,6,10,11];
+
+// Carrés gris
 let squares = [];
-let squareSize = 30;
 let draggedSquareIndex = -1; 
 let offsetX = 0;
 let offsetY = 0;
 
-// --------------------
-//  Carrés verts (déplaçables)
-// --------------------
-let greenSquares = [];
-let draggedGreenIndex = -1; 
+// Timer pour "Trichez vos fichiers..."
+let cheatMessageTimer = 0; 
 
+// Timer pour afficher un mini pop-up en haut
+// quand la fenêtre ne peut pas s'ouvrir
+let cannotOpenPopupTimer = 0;
+
+// Timer pour le message "Appuyez sur E" (5s)
+let interactMessageEnd = 0;
 
 /***********************
- *   FONCTION CENTRER  *
+ *   FONCTION CENTRER  
  ***********************/
 function centerCanvas() {
   let x = (windowWidth - width) / 2;
   let y = (windowHeight - height) / 2;
   cnv.position(x, y);
 }
-
-/**
- * Centre la « fenêtre » dans le canvas
- */
 function centerWhiteSquare() {
   whiteSquareX = width / 2;
   whiteSquareY = height / 2;
 }
 
 /***********************
- *      PRELOAD()      *
+ *      PRELOAD()      
  ***********************/
 function preload() {
   spriteDetective = loadImage('assets/sprite_detective.png');
   spriteImage     = loadImage("assets/MAPS/perso.png");
   tileImg         = loadImage("assets/tile.png");
   room            = loadImage("assets/MAPS/Chambre.png");
-  
-  windowsxp       = loadImage("assets/MAPS/windowsxp.png"); 
+  windowsxp       = loadImage("assets/MAPS/windowsxp.png");
 
+  // On charge 12 images "file 1.png" ... "file 12.png"
+  for (let i = 1; i <= 12; i++) {
+    let path = `assets/FILES/file ${i}.png`;
+    fileImages.push(loadImage(path));
+  }
+
+  // Polices & sons
   JMH     = loadFont('assets/JMH Typewriter.ttf');
   LODGER  = loadFont('assets/JollyLodger-Regular.ttf');
   mySound = loadSound('assets/bgmusique.mp3');
 
+  // Objets, indices
   obj1       = loadImage('assets/indice2alpha0.png');
   imgIndice1 = loadImage('assets/indice1.png');
   win        = loadImage('assets/tile.png');
 }
 
 /***********************
- *       SETUP()       *
+ *       SETUP()       
  ***********************/
 function setup() {
   cnv = createCanvas(ROWS * tileWidth, COLS * tileWidth);
@@ -146,64 +147,88 @@ function setup() {
   volumeSlider = createSlider(0, 1, 0.5, 0.01);
   volumeSlider.position(width / 2 - 25, height / 2);
   volumeSlider.style('width', '300px');
-  volumeSlider.input(() => {
-    mySound.setVolume(volumeSlider.value());
-  });
   volumeSlider.hide();
 
-  // On crée 16 carrés verts pour la fenêtre
   initGreenSquares();
 }
 
 /***********************
- * INIT GREEN SQUARES  *
+ * INIT GREEN SQUARES  
  ***********************/
 function initGreenSquares() {
   greenSquares = []; 
 
-  let rows = 4;
+  let totalFiles = fileImages.length; 
+  let rows = 3;
   let cols = 4;
 
-  // Taille du slot (chaque case 4×4 à l’intérieur de la « fenêtre »)
-  let cellSlotW = whiteSquareW / cols;
-  let cellSlotH = whiteSquareH / rows;
-  
-  // On fait des carrés verts à la moitié du slot
-  let cellW = cellSlotW / 2; 
+  let usableW = whiteSquareW - 100;
+  let usableH = whiteSquareH - 100;
+  let cellSlotW = usableW / cols;
+  let cellSlotH = usableH / rows;
+  let cellW = cellSlotW / 2;
   let cellH = cellSlotH / 2;
 
-  // On crée 16 carrés verts, centrés dans chaque slot
+  let startX = (whiteSquareX - whiteSquareW / 2) + 50;
+  let startY = (whiteSquareY - whiteSquareH / 2) + 50;
+
+  let indexFile = 0;
+  
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      let slotCenterX = (whiteSquareX - whiteSquareW / 2) + c * cellSlotW + cellSlotW / 2;
-      let slotCenterY = (whiteSquareY - whiteSquareH / 2) + r * cellSlotH + cellSlotH / 2;
+      if (indexFile >= totalFiles) break; 
+
+      let slotCenterX = startX + c * cellSlotW + cellSlotW / 2;
+      let slotCenterY = startY + r * cellSlotH + cellSlotH / 2;
 
       let sq = {
         x: slotCenterX,
         y: slotCenterY,
         w: cellW,
         h: cellH,
-        color: 'green'
+        fileIndex: indexFile
       };
       greenSquares.push(sq);
+
+      indexFile++;
     }
   }
 }
 
 /***********************
- *  WINDOW RESIZED     *
+ *  FICHIERS CRITIQUES
  ***********************/
-function windowResized() {
-  centerCanvas();
-  centerWhiteSquare();
-  initGreenSquares();
+function areImportantFilesRemoved() {
+  for (let g of greenSquares) {
+    if (criticalIndices.includes(g.fileIndex)) {
+      return false; 
+    }
+  }
+  return true;
 }
 
 /***********************
- *        DRAW()       *
+ *        DRAW()       
  ***********************/
 function draw() {
   clear();
+
+  // Si cheatMessageTimer > 0, on affiche "Trichez vos fichiers..."
+  if (cheatMessageTimer > 0) {
+    fill(255, 50, 50);
+    textSize(20);
+    text("Trichez vos fichiers et supprimez-les !", width / 2, height / 2);
+    cheatMessageTimer--;
+  }
+
+  // S'il y a un popup "impossible d'ouvrir" (cannotOpenPopupTimer > 0),
+  // on l'affiche en haut
+  if (cannotOpenPopupTimer > 0) {
+    fill(255, 50, 50);
+    textSize(20);
+    text("Vous ne pouvez pas ouvrir la fenêtre ici !", width / 2, 40);
+    cannotOpenPopupTimer--;
+  }
 
   if (gameState === "splash") {
     splash();
@@ -223,17 +248,14 @@ function draw() {
     imageMode(CORNER);
     image(room, 0, 0, width, height);
 
+    // Màj du joueur
     player.update();
     player.draw();
 
-    if (showMessage1) {
-      image(imgIndice1, width / 2, height / 2);
-    }
-
+    // Éléments interactifs
     drawInteractiveElements();
   }
 
-  // Affiche la "fenêtre" (image 192×144) si demandé
   if (showWhiteSquare) {
     drawWhiteSquare();
   }
@@ -262,7 +284,6 @@ function splash() {
   textSize(20);
   text("BY STUDIO NAME", width / 2, 160);
 
-  // Bouton "Click to start"
   fill(89, 135, 126);
   rect(width / 2, height / 2 + 40, 300, 55, 5);
   fill(255);
@@ -298,41 +319,43 @@ function credits() {
 }
 
 /***********************
- *     LEVEL1 CODE     *
+ *     LEVEL1 CODE     
  ***********************/
 function level1() {
+  // Redimensionne
   resizeCanvas(ROWS1 * tileWidth, COLS1 * tileWidth);
   centerCanvas();
   centerWhiteSquare();
   initGreenSquares();
 
   clear();
+  
   allSprites.pixelPerfect = true;
-  allSprites.rotationLock = true;
-  allSprites.tileSize = tileWidth;
+  allSprites.rotationLock  = true;
+  allSprites.tileSize      = tileWidth;
   
   bricks = new Group();
-  bricks.img = tileImg;
-  bricks.tile = "#";
-  bricks.collider = 'static';
-  bricks.debug = true;
+  bricks.img      = tileImg;
+  bricks.tile     = "#";
+  bricks.collider = "static";
+  bricks.debug    = true;
     
   indice1 = new Sprite(8, 8, 1, 1);
-  indice1.img = obj1;
-  indice1.tile = '1';
+  indice1.img      = obj1;
+  indice1.tile     = "1";
   indice1.collider = "static";
-  indice1.scale = 1;
-  indice1.alpha = 255;
+  indice1.scale    = 1;
+  indice1.alpha    = 255;
   
   wintile = new Sprite(1, 1, 1, 1);
-  wintile.img = win;
-  wintile.tile = 'w';
+  wintile.img      = win;
+  wintile.tile     = "w";
   wintile.collider = "static";
   
   player = new Sprite(0, 0, 1, 1);
   player.spriteSheet = spriteImage;
-  player.tile = "p";
-  player.vel = { x: 0, y: 0 };
+  player.tile        = "p";
+  player.vel         = { x: 0, y: 0 };
   player.removeColliders();
   player.addCollider(0, 0, 2, 2);
   
@@ -346,28 +369,34 @@ function level1() {
   player.changeAni("stand");
   player.scale = 1;
   
-  // Parcourt la map
+  // Placement
   for (let j = 0; j < map.length; j++) {
     for (let i = 0; i < map[j].length; i++) {
-      if (map[j][i] === '1') {
+      if (map[j][i] === "1") {
         indice1.pos.set(i, j);
-      } else if (map[j][i] === 'w') {
+      } else if (map[j][i] === "w") {
         wintile.pos.set(i, j);
-      } else if (map[j][i] === 'p') {
+      } else if (map[j][i] === "p") {
         player.pos.set(i, j);
       }
     }
   }
   
-  // Tu peux ajuster l'offset si besoin (0,0,1,1) ou (1,1,1,1)
   new Tiles(map, 1, 1, 1, 1);
 }
 
 /**
- * Dessine les éléments interactifs (texte, etc.) en jeu
+ * Gère l'affichage du message "Appuyez sur E" 5s
  */
 function drawInteractiveElements() {
+  // Vérifie la distance du joueur à indice1
   if (indice1 && dist(player.pos.x, player.pos.y, indice1.pos.x, indice1.pos.y) < 2) {
+    // On réinitialise le timer => 5s
+    interactMessageEnd = frameCount + 300; 
+  }
+
+  // Tant qu'on n'a pas dépassé interactMessageEnd, on affiche
+  if (frameCount < interactMessageEnd) {
     fill(255);
     textAlign(CENTER);
     text("Appuyez sur 'E' pour interagir", width / 2, height - 50);
@@ -375,16 +404,14 @@ function drawInteractiveElements() {
 }
 
 /***********************
- *  DESSIN DE LA « FENÊTRE »
+ *  DESSIN DE LA FENÊTRE
  ***********************/
 function drawWhiteSquare() {
-  // On remplace le grand rectangle blanc par l'image "windowsxp"
   imageMode(CENTER);
   image(windowsxp, whiteSquareX, whiteSquareY, whiteSquareW, whiteSquareH);
 
-  // Carré rouge (coin supérieur gauche)
   rectMode(CORNER);
-fill(0, 0, 0, 0);
+  fill(0, 0, 0, 0);
   rect(
     whiteSquareX - whiteSquareW / 2,  
     whiteSquareY - whiteSquareH / 2,  
@@ -393,24 +420,23 @@ fill(0, 0, 0, 0);
   );
   rectMode(CENTER);
 
-  // Dessin des carrés verts
+  // Dessine les 12 images 
   for (let g of greenSquares) {
-    fill(g.color);
-    rect(g.x, g.y, g.w, g.h);
+    imageMode(CENTER);
+    image(fileImages[g.fileIndex], g.x, g.y, g.w, g.h);
   }
 
-  // Dessin des carrés gris
+  // Carrés gris (optionnels)
   for (let s of squares) {
     fill(s.color || 'grey');
     rect(s.x, s.y, s.w, s.h);
   }
 
-  // Bouton "close"
   drawCloseButton();
 }
 
 /**
- * Dessine le bouton "close" (X)
+ * Bouton "close" (X)
  */
 function drawCloseButton() {
   rectMode(CORNER);
@@ -424,27 +450,35 @@ function drawCloseButton() {
 
   stroke(255);
   strokeWeight(2);
-  line(closeBtn.x + 5, closeBtn.y + 5, closeBtn.x + closeBtn.w - 5, closeBtn.y + closeBtn.h - 5);
-  line(closeBtn.x + 5, closeBtn.y + closeBtn.h - 5, closeBtn.x + closeBtn.w - 5, closeBtn.y + 5);
+  line(closeBtn.x + 5,  closeBtn.y + 5,
+       closeBtn.x + closeBtn.w - 5, closeBtn.y + closeBtn.h - 5);
+  line(closeBtn.x + 5,  closeBtn.y + closeBtn.h - 5,
+       closeBtn.x + closeBtn.w - 5, closeBtn.y + 5);
   noStroke();
 
+  // Clique sur le bouton "close"
   if (
     mouseIsPressed &&
     mouseX >= closeBtn.x && mouseX <= closeBtn.x + closeBtn.w &&
     mouseY >= closeBtn.y && mouseY <= closeBtn.y + closeBtn.h
   ) {
-    showWhiteSquare = false;
+    // Vérifie si les fichiers critiques sont tous supprimés
+    if (areImportantFilesRemoved()) {
+      showWhiteSquare = false;
+    } else {
+      cheatMessageTimer = 120; 
+    }
   }
 
   rectMode(CENTER);
 }
 
 /***********************
- * ÉVÉNEMENTS SOURIS   *
+ * ÉVÉNEMENTS SOURIS
  ***********************/
 function mousePressed() {
   if (showWhiteSquare) {
-    // Test drag & drop sur carrés gris
+    // Carrés gris
     for (let i = squares.length - 1; i >= 0; i--) {
       let s = squares[i];
       let left   = s.x - s.w / 2;
@@ -460,7 +494,7 @@ function mousePressed() {
       }
     }
 
-    // Test drag & drop sur carrés verts
+    // Fichiers
     for (let i = greenSquares.length - 1; i >= 0; i--) {
       let g = greenSquares[i];
       let left   = g.x - g.w / 2;
@@ -506,10 +540,11 @@ function mouseReleased() {
 }
 
 /***********************
- * ÉVÉNEMENTS CLAVIER  *
+ * ÉVÉNEMENTS CLAVIER
  ***********************/
 function keyPressed() {
   if (player && player.vel) {
+    // Mouvements
     if (keyIsDown(RIGHT_ARROW)) {
       player.changeAni("right");
       player.vel.x = 0.2;
@@ -531,9 +566,13 @@ function keyPressed() {
       player.vel.y = 0.2;
     }
 
-    // Interaction : 'E'
+    // Ouvrir la fenêtre SI joueur près de indice1
     if (key === 'e' || key === 'E') {
-      showWhiteSquare = true;
+      if (indice1 && dist(player.pos.x, player.pos.y, indice1.pos.x, indice1.pos.y) < 2) {
+        showWhiteSquare = true;  
+      } else {
+        cannotOpenPopupTimer();
+      }
     }
   }
 }
@@ -547,25 +586,18 @@ function keyReleased() {
 }
 
 /***********************
- *     COLLISIONS      *
+ *     COLLISIONS
  ***********************/
-/**
- * Vérifie si un carré (vert) centré (g.x, g.y, g.w, g.h)
- * chevauche le carré rouge (mode CORNER).
- */
-function isOverlappingRectCorner(greenSq) {
-  let sqLeft   = greenSq.x - greenSq.w / 2;
-  let sqRight  = greenSq.x + greenSq.w / 2;
-  let sqTop    = greenSq.y - greenSq.h / 2;
-  let sqBottom = greenSq.y + greenSq.h / 2;
+function isOverlappingRectCorner(g) {
+  let sqLeft   = g.x - g.w / 2;
+  let sqRight  = g.x + g.w / 2;
+  let sqTop    = g.y - g.h / 2;
+  let sqBottom = g.y + g.h / 2;
 
   let redLeft   = whiteSquareX - whiteSquareW / 2;
   let redTop    = whiteSquareY - whiteSquareH / 2;
   let redRight  = redLeft + redSquare.w;
   let redBottom = redTop + redSquare.h;
 
-  if (sqRight < redLeft || sqLeft > redRight || sqBottom < redTop || sqTop > redBottom) {
-    return false;
-  }
-  return true;
+  return !(sqRight < redLeft || sqLeft > redRight || sqBottom < redTop || sqTop > redBottom);
 }

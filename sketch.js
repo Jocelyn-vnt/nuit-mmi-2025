@@ -338,7 +338,7 @@ function level1() {
   bricks.img      = tileImg;
   bricks.tile     = "#";
   bricks.collider = "static";
-  bricks.debug    = true;
+  // bricks.debug    = true;
     
   indice1 = new Sprite(8, 8, 1, 1);
   indice1.img      = obj1;

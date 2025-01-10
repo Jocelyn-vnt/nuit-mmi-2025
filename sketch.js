@@ -2,7 +2,6 @@
  * VARIABLES GLOBALES *
  **********************/
 
-// Variables existantes de sketch.js
 let spriteImage, tileImg;
 let showMessage1 = false;
 let obj1;
@@ -56,13 +55,25 @@ let imgIndice1;
 let win;
 
 // --------------------
-//  Carré blanc & contenu
+//  Image pour remplacer la fenêtre
 // --------------------
-let showWhiteSquare = false;
-let whiteSquareSize = 200;
+let windowsxp; 
+
+// --------------------
+//  Fenêtre (auparavant « carré blanc »)
+// --------------------
+
+// Largeur/hauteur fixes : 192×144
+let whiteSquareW = 384; 
+let whiteSquareH = 288;
+
+// Coordonnées du centre de la « fenêtre »
 let whiteSquareX, whiteSquareY;
 
-// Carré rouge (dessiné en mode CORNER, en haut à gauche du carré blanc)
+// Affichage ou non de la fenêtre
+let showWhiteSquare = false;
+
+// Carré rouge dans le coin sup-gauche de la fenêtre
 let redSquare = { w: 50, h: 50 };
 
 // --------------------
@@ -70,7 +81,7 @@ let redSquare = { w: 50, h: 50 };
 // --------------------
 let squares = [];
 let squareSize = 30;
-let draggedSquareIndex = -1; // index d'un éventuel carré gris
+let draggedSquareIndex = -1; 
 let offsetX = 0;
 let offsetY = 0;
 
@@ -79,6 +90,7 @@ let offsetY = 0;
 // --------------------
 let greenSquares = [];
 let draggedGreenIndex = -1; 
+
 
 /***********************
  *   FONCTION CENTRER  *
@@ -90,8 +102,7 @@ function centerCanvas() {
 }
 
 /**
- * Centre le carré blanc dans le canvas 
- * (utile après chaque resizeCanvas())
+ * Centre la « fenêtre » dans le canvas
  */
 function centerWhiteSquare() {
   whiteSquareX = width / 2;
@@ -103,9 +114,11 @@ function centerWhiteSquare() {
  ***********************/
 function preload() {
   spriteDetective = loadImage('assets/sprite_detective.png');
-  spriteImage     = loadImage("assets/new_sprite_3.png");
+  spriteImage     = loadImage("assets/MAPS/perso.png");
   tileImg         = loadImage("assets/tile.png");
   room            = loadImage("assets/MAPS/Chambre.png");
+  
+  windowsxp       = loadImage("assets/MAPS/windowsxp.png"); 
 
   JMH     = loadFont('assets/JMH Typewriter.ttf');
   LODGER  = loadFont('assets/JollyLodger-Regular.ttf');
@@ -138,32 +151,32 @@ function setup() {
   });
   volumeSlider.hide();
 
-  // On crée 16 carrés verts pour le carré blanc
+  // On crée 16 carrés verts pour la fenêtre
   initGreenSquares();
 }
 
-/**
- * Initialise (ou ré-initialise) la grille de 4×4 carrés verts
- */
+/***********************
+ * INIT GREEN SQUARES  *
+ ***********************/
 function initGreenSquares() {
   greenSquares = []; 
 
   let rows = 4;
   let cols = 4;
 
-  // Taille du slot (chaque case 4×4 à l’intérieur du grand carré blanc)
-  let cellSlotW = whiteSquareSize / cols;
-  let cellSlotH = whiteSquareSize / rows;
+  // Taille du slot (chaque case 4×4 à l’intérieur de la « fenêtre »)
+  let cellSlotW = whiteSquareW / cols;
+  let cellSlotH = whiteSquareH / rows;
   
-  // On dessine un carré vert deux fois plus petit que le slot
+  // On fait des carrés verts à la moitié du slot
   let cellW = cellSlotW / 2; 
   let cellH = cellSlotH / 2;
 
   // On crée 16 carrés verts, centrés dans chaque slot
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      let slotCenterX = (whiteSquareX - whiteSquareSize / 2) + c * cellSlotW + cellSlotW / 2;
-      let slotCenterY = (whiteSquareY - whiteSquareSize / 2) + r * cellSlotH + cellSlotH / 2;
+      let slotCenterX = (whiteSquareX - whiteSquareW / 2) + c * cellSlotW + cellSlotW / 2;
+      let slotCenterY = (whiteSquareY - whiteSquareH / 2) + r * cellSlotH + cellSlotH / 2;
 
       let sq = {
         x: slotCenterX,
@@ -177,9 +190,9 @@ function initGreenSquares() {
   }
 }
 
-/**
- * Gère le redimensionnement de la fenêtre :
- */
+/***********************
+ *  WINDOW RESIZED     *
+ ***********************/
 function windowResized() {
   centerCanvas();
   centerWhiteSquare();
@@ -202,30 +215,25 @@ function draw() {
     credits();
   } 
   else if (gameState === "level1") {
-    // Appel unique à level1() : on l'a déjà fait, maintenant on dessine...
     if (!level1Called) {
       level1();
       level1Called = true;
     }
 
-    // On dessine l'image de fond à chaque frame (pour qu'elle reste visible)
     imageMode(CORNER);
     image(room, 0, 0, width, height);
 
-    // Mouvements/affichage du joueur
     player.update();
     player.draw();
 
-    // Affiche l'image d'indice si besoin
     if (showMessage1) {
       image(imgIndice1, width / 2, height / 2);
     }
 
-    // Éléments interactifs (texte, etc.)
     drawInteractiveElements();
   }
 
-  // Le carré blanc (avec ses carrés verts, etc.)
+  // Affiche la "fenêtre" (image 192×144) si demandé
   if (showWhiteSquare) {
     drawWhiteSquare();
   }
@@ -239,7 +247,6 @@ function splash() {
   centerCanvas();
   centerWhiteSquare();
 
-  // Réinitialise la grille de carrés verts (optionnel)
   initGreenSquares();
 
   clear();
@@ -263,13 +270,10 @@ function splash() {
   textSize(30);
   text("Click to start", width / 2, height / 2 + 50);
 
-  // Clic sur le bouton
   if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 &&
       mouseY >= height / 2 + 10 && mouseY <= height / 2 + 65 && mouseIsPressed) {
     gameState = "level1";
   }
-
-  // Survol du bouton
   if (mouseX >= width / 2 - 150 && mouseX <= width / 2 + 150 &&
       mouseY >= height / 2 + 10 && mouseY <= height / 2 + 65) {
     fill("white");
@@ -297,28 +301,22 @@ function credits() {
  *     LEVEL1 CODE     *
  ***********************/
 function level1() {
-  // Redimensionne pour le niveau 1
   resizeCanvas(ROWS1 * tileWidth, COLS1 * tileWidth);
   centerCanvas();
   centerWhiteSquare();
   initGreenSquares();
 
   clear();
-
-  // p5.play config
   allSprites.pixelPerfect = true;
   allSprites.rotationLock = true;
   allSprites.tileSize = tileWidth;
   
-  // Groupe "murs"
   bricks = new Group();
   bricks.img = tileImg;
   bricks.tile = "#";
   bricks.collider = 'static';
-  // bricks.alpha = 0; // si tu veux qu'ils soient invisibles, décommente
   bricks.debug = true;
     
-  // Indice
   indice1 = new Sprite(8, 8, 1, 1);
   indice1.img = obj1;
   indice1.tile = '1';
@@ -326,13 +324,11 @@ function level1() {
   indice1.scale = 1;
   indice1.alpha = 255;
   
-  // Tuile de fin (win)
   wintile = new Sprite(1, 1, 1, 1);
   wintile.img = win;
   wintile.tile = 'w';
   wintile.collider = "static";
   
-  // Joueur
   player = new Sprite(0, 0, 1, 1);
   player.spriteSheet = spriteImage;
   player.tile = "p";
@@ -340,7 +336,6 @@ function level1() {
   player.removeColliders();
   player.addCollider(0, 0, 2, 2);
   
-  // Animations
   player.addAnis({
     stand: { w: 2, h: 2, row: 0, frames: 4, frameDelay: 20 },
     down:  { w: 2, h: 2, row: 1, frames: 4, frameDelay: 20 },
@@ -351,7 +346,7 @@ function level1() {
   player.changeAni("stand");
   player.scale = 1;
   
-  // Parcourt la map pour placer l'indice1, la tuile win, etc.
+  // Parcourt la map
   for (let j = 0; j < map.length; j++) {
     for (let i = 0; i < map[j].length; i++) {
       if (map[j][i] === '1') {
@@ -359,24 +354,19 @@ function level1() {
       } else if (map[j][i] === 'w') {
         wintile.pos.set(i, j);
       } else if (map[j][i] === 'p') {
-        // Place le joueur s'il y a le caractère 'p' dans la map
         player.pos.set(i, j);
       }
     }
   }
   
-  // On construit les Tiles en (0,0), sans offset
+  // Tu peux ajuster l'offset si besoin (0,0,1,1) ou (1,1,1,1)
   new Tiles(map, 1, 1, 1, 1);
-
-  // NOTE : On NE DESSINE PAS l'image 'room' ici
-  // Elle sera redessinée dans draw(), tant que gameState === "level1".
 }
 
 /**
  * Dessine les éléments interactifs (texte, etc.) en jeu
  */
 function drawInteractiveElements() {
-  // Affiche un message si le joueur est proche de l'indice
   if (indice1 && dist(player.pos.x, player.pos.y, indice1.pos.x, indice1.pos.y) < 2) {
     fill(255);
     textAlign(CENTER);
@@ -385,21 +375,19 @@ function drawInteractiveElements() {
 }
 
 /***********************
- *  DESSIN DU CARRÉ    *
+ *  DESSIN DE LA « FENÊTRE »
  ***********************/
 function drawWhiteSquare() {
-  // Dessin du carré blanc (centré)
-  rectMode(CENTER);
-  noStroke();
-  fill(255);
-  rect(whiteSquareX, whiteSquareY, whiteSquareSize, whiteSquareSize);
+  // On remplace le grand rectangle blanc par l'image "windowsxp"
+  imageMode(CENTER);
+  image(windowsxp, whiteSquareX, whiteSquareY, whiteSquareW, whiteSquareH);
 
-  // Carré rouge (coin supérieur gauche du carré blanc)
+  // Carré rouge (coin supérieur gauche)
   rectMode(CORNER);
-  fill('red');
+fill(0, 0, 0, 0);
   rect(
-    whiteSquareX - whiteSquareSize / 2,  
-    whiteSquareY - whiteSquareSize / 2,  
+    whiteSquareX - whiteSquareW / 2,  
+    whiteSquareY - whiteSquareH / 2,  
     redSquare.w,
     redSquare.h
   );
@@ -411,7 +399,7 @@ function drawWhiteSquare() {
     rect(g.x, g.y, g.w, g.h);
   }
 
-  // Dessin des carrés gris (optionnel)
+  // Dessin des carrés gris
   for (let s of squares) {
     fill(s.color || 'grey');
     rect(s.x, s.y, s.w, s.h);
@@ -428,8 +416,8 @@ function drawCloseButton() {
   rectMode(CORNER);
 
   let closeBtn = { x: 0, y: 0, w: 20, h: 20 };
-  closeBtn.x = (whiteSquareX + whiteSquareSize / 2) - closeBtn.w;
-  closeBtn.y = (whiteSquareY - whiteSquareSize / 2);
+  closeBtn.x = (whiteSquareX + whiteSquareW / 2) - closeBtn.w;
+  closeBtn.y = (whiteSquareY - whiteSquareH / 2);
 
   fill(200, 60, 60);
   rect(closeBtn.x, closeBtn.y, closeBtn.w, closeBtn.h);
@@ -440,7 +428,6 @@ function drawCloseButton() {
   line(closeBtn.x + 5, closeBtn.y + closeBtn.h - 5, closeBtn.x + closeBtn.w - 5, closeBtn.y + 5);
   noStroke();
 
-  // Ferme le carré blanc si on clique sur le bouton
   if (
     mouseIsPressed &&
     mouseX >= closeBtn.x && mouseX <= closeBtn.x + closeBtn.w &&
@@ -492,13 +479,11 @@ function mousePressed() {
 }
 
 function mouseDragged() {
-  // Carré gris
   if (draggedSquareIndex !== -1) {
     let s = squares[draggedSquareIndex];
     s.x = mouseX - offsetX;
     s.y = mouseY - offsetY;
   }
-  // Carré vert
   else if (draggedGreenIndex !== -1) {
     let g = greenSquares[draggedGreenIndex];
     g.x = mouseX - offsetX;
@@ -507,16 +492,12 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
-  // Carré gris
   if (draggedSquareIndex !== -1) {
     draggedSquareIndex = -1;
   }
 
-  // Carré vert
   if (draggedGreenIndex !== -1) {
     let g = greenSquares[draggedGreenIndex];
-
-    // S'il chevauche le carré rouge, on le retire
     if (isOverlappingRectCorner(g)) {
       greenSquares.splice(draggedGreenIndex, 1);
     }
@@ -568,31 +549,22 @@ function keyReleased() {
 /***********************
  *     COLLISIONS      *
  ***********************/
-
 /**
  * Vérifie si un carré (vert) centré (g.x, g.y, g.w, g.h)
- * chevauche le carré rouge, dessiné en CORNER.
+ * chevauche le carré rouge (mode CORNER).
  */
 function isOverlappingRectCorner(greenSq) {
-  // Bords du carré vert (mode CENTER)
   let sqLeft   = greenSq.x - greenSq.w / 2;
   let sqRight  = greenSq.x + greenSq.w / 2;
   let sqTop    = greenSq.y - greenSq.h / 2;
   let sqBottom = greenSq.y + greenSq.h / 2;
 
-  // Bords du carré rouge (mode CORNER)
-  let redLeft   = whiteSquareX - whiteSquareSize / 2;
-  let redTop    = whiteSquareY - whiteSquareSize / 2;
+  let redLeft   = whiteSquareX - whiteSquareW / 2;
+  let redTop    = whiteSquareY - whiteSquareH / 2;
   let redRight  = redLeft + redSquare.w;
   let redBottom = redTop + redSquare.h;
 
-  // Test de non-collision
-  if (
-    sqRight < redLeft  ||
-    sqLeft  > redRight ||
-    sqBottom < redTop  ||
-    sqTop    > redBottom
-  ) {
+  if (sqRight < redLeft || sqLeft > redRight || sqBottom < redTop || sqTop > redBottom) {
     return false;
   }
   return true;
